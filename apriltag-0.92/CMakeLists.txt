@@ -3,9 +3,11 @@
 project(apriltag)
 cmake_minimum_required(VERSION 2.8)
 
+include(def_library)
+
 add_definitions(-msse4.2 -pthread  -g -std=gnu99 -Wall -Wno-unused-parameter -Wno-format-zero-length -O3)
 
-add_library(apriltag
+set(APRIL_SRCS
   apriltag.c
   image_f32.c
   image_u8.c
@@ -21,6 +23,9 @@ add_library(apriltag
   segment2.c
   workerpool.c
   g2d.c
-  )
+  )  
 
-target_link_libraries(apriltag m pthread)
+def_library(apriltag
+  SOURCES ${APRIL_SRCS}
+  LINK_LIBS m pthread
+  )
