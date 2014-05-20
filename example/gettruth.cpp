@@ -1,4 +1,3 @@
-#if 0
 #include <iostream>
 #include <vector>
 
@@ -23,7 +22,6 @@ namespace Eigen
 using namespace std;
 using namespace ceres;
 using namespace Eigen;
-
 
 /////////////////////////////////////////////////////////////////////////
 class LocalizationProblem 
@@ -59,9 +57,9 @@ class LocalizationProblem
         return false;
       };
 
-      FscanfOrDie( fptr, "%d", &num_poses_ );
-      FscanfOrDie( fptr, "%d", &num_landmarks_ );
-      FscanfOrDie( fptr, "%d", &num_observations_ );
+      fscanf( fptr, "%d", &num_poses_ );
+      fscanf( fptr, "%d", &num_landmarks_ );
+      fscanf( fptr, "%d", &num_observations_ );
 
       landmark_index_.resize( num_observations_ );
       pose_index_.resize( num_observations_ );
@@ -72,14 +70,16 @@ class LocalizationProblem
       num_parameters_ = 6 * num_poses_; // just a localization problem
 
       for (int i = 0; i < num_observations_; ++i) {
-        FscanfOrDie( fptr, "%d", &pose_index_[i] );
-        FscanfOrDie( fptr, "%d", &landmark_index_[i] );
-
         double u, v;
-        FscanfOrDie(fptr, "%lf", &u );
-        FscanfOrDie(fptr, "%lf", &v );
+        int n = fscanf( fptr, "%d, %d, %lf, %lf",
+            &pose_index_[i], &landmark_index_[i], &u, &v );
+        if( n != 4 ){
+          LOG(FATAL) << "Error reading measurement " << i << ".";
+        }
+
+
         observations_[i] = Eigen::Vector2d(u,v);
-      }
+    }
 
       // poses
       for (int i = 0; i < num_poses_; ++i) {
@@ -95,8 +95,9 @@ class LocalizationProblem
       // landmarks
       for (int i = 0; i < num_landmarks_; ++i) {
         double x,y,z;
-        int n = fscanf( fptr, "%lf, %lf, %lf", &x, &y , &z );
-        if( n != 3 ){
+        int uid;
+        int n = fscanf( fptr, "%d, %lf, %lf, %lf", &uid, &x, &y , &z );
+        if( n != 4 ){
           LOG(FATAL) << "Error reading landmark " << i << ".";
         }
         landmarks_[i] << x, y, z;
@@ -106,13 +107,6 @@ class LocalizationProblem
     }
 
   private:
-    template<typename T>
-      void FscanfOrDie(FILE *fptr, const char *format, T *value) {
-        int num_scanned = fscanf(fptr, format, value);
-        if (num_scanned != 1) {
-          LOG(FATAL) << "Invalid UW data file.";
-        }
-      }
 
     int num_poses_;
     int num_landmarks_;
@@ -171,5 +165,4 @@ int main( int argc, char** argv )
 
   return 0;
 }
-#endif
-int main( int, char** ){return 0;}
+

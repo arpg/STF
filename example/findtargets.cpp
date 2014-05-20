@@ -217,6 +217,7 @@ int main( int argc, char** argv )
       return 0;
     }
     calibu::Rectify( lut, vImages[0].data, rect.data, rect.cols, rect.rows );
+    cvtColor( rect, rgb, CV_GRAY2RGB );
 
     // 2) Run tag detector and get tag corners
     std::vector<april_tag_detection_t> vDetections;
@@ -258,7 +259,6 @@ int main( int argc, char** argv )
       }
 
       // draw rectangle around tag 
-      cvtColor( rect, rgb, CV_GRAY2RGB );
       cv::line( rgb,
           cv::Point( p->p[0][0], p->p[0][1] ),
           cv::Point( p->p[1][0], p->p[1][1] ),
@@ -286,9 +286,9 @@ int main( int argc, char** argv )
   }
 
   // ok, now print everything:
-  printf( "num_poses=%d\n", local_pose_id ); 
-  printf( "num_landmarks=%lu\n", local_to_survey.size() ); 
-  printf( "num_measurements=%lu\n", measurements.size() ); 
+  printf( "%d\n", local_pose_id ); 
+  printf( "%lu\n", local_to_survey.size() ); 
+  printf( "%lu\n", measurements.size() ); 
   for( size_t ii = 0; ii < measurements.size(); ii++ ){
     measurement_t& z = measurements[ii];
     printf("%d, %d, %f, %f\n", z.pose_idx, z.lm_idx, z.u, z.v ); 

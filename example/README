@@ -15,3 +15,8 @@ Example:
 $ ./findtargets -cam files://[*.pgm] -cmod cmod.xml -map map.dat > init.dat
 $ ./gettruth -network init.dat  -cmod cmod.xml -map map.dat > solution.dat
 
+TODO:
+* Push through ceres
+* Tag localization with generative model
+* Verify against Vicon
+

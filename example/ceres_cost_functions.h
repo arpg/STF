@@ -62,11 +62,13 @@ ceres::CostFunction* ProjectionCost(
     return (new ceres::AutoDiffCostFunction<ProjectionCostFunctor<CamT>,2,6>(
           new ProjectionCostFunctor<CamT>( _pwj,_zij,_params ) ) );
   }
+  /*
   else if( dynamic_cast<calibu::FovCamera<Scalar>*>( _cam ) ){
     typedef calibu::FovCamera<Scalar> CamT;
     return (new ceres::AutoDiffCostFunction<ProjectionCostFunctor<CamT>,2,6>(
           new ProjectionCostFunctor<CamT>( _pwj,_zij,_params ) ) );
   }
+  */
   return NULL;
 }
 
