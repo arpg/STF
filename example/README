@@ -1,0 +1,17 @@
+Given:
+
+1) An image sequence that contain AR tags.
+2) A surveyed map of those AR tags (e.g., map.dat).
+3) Calibu camera models for your image sequence (e.g., cameras.xml).
+
+The command line tools here will:
+
+1) Find targets and extract 2d-3d correspondences to create a measurement
+   network for bundle adjustment (use findtargets).
+2) Optimize the measurements to estimate ground truth poses (see gettruth).
+
+Example:
+
+$ ./findtargets -cam files://[*.pgm] -cmod cmod.xml -map map.dat > init.dat
+$ ./gettruth -network init.dat  -cmod cmod.xml -map map.dat > solution.dat
+
