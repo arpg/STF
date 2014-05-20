@@ -1,3 +1,4 @@
+#if 0
 #include <iostream>
 #include <vector>
 
@@ -170,3 +171,5 @@ int main( int argc, char** argv )
 
   return 0;
 }
+#endif
+int main( int, char** ){return 0;}

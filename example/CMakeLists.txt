@@ -2,8 +2,10 @@ cmake_minimum_required(VERSION 2.8)
 
 list( APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake_modules/" )
 
-set( CMAKE_C_FLAGS "-g -Wall -Wextra" )
-set( CMAKE_CXX_FLAGS "-g -Wall -Wextra -std=c++11" )
+set( CMAKE_CXX_FLAGS "-O3 -std=c++11" )
+
+#set( CMAKE_C_FLAGS "-g -Wall -Wextra" )
+#set( CMAKE_CXX_FLAGS "-g -Wall -Wextra -std=c++11" )
 #set( CMAKE_C_FLAGS "-O3 -funroll-loops -msse4 -mavx -ffast-math -Wall -Wextra" )
 #set( CMAKE_CXX_FLAGS "-O3 -funroll-loops -msse4 -mavx -ffast-math -Wall -Wextra -std=c++11" )
 
