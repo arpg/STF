@@ -17,6 +17,7 @@ $ ./gettruth -network init.dat  -cmod cmod.xml -map map.dat > solution.dat
 
 TODO:
 * Push through ceres
-* Tag localization with generative model
+* Verify with visualization
 * Verify against Vicon
+* Tag localization with generative model
 
