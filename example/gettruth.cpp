@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 
+#include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <calibu/cam/CameraXml.h>
 #include <calibu/cam/CameraModelT.h>
@@ -13,6 +14,10 @@
 #include <ceres/ceres.h>
 
 #include "ceres_cost_functions.h"
+
+DEFINE_string(cmod,
+    "-cmod",
+    "calibu camera model xml file.");
 
 namespace Eigen
 {
@@ -48,6 +53,32 @@ class LocalizationProblem
 
     const Eigen::Vector2d& observation(int i) {
       return observations_[i];
+    }
+
+    void PrintData( void )
+    {
+      fprintf( stdout, "%d\n", num_poses_ );
+      fprintf( stdout, "%d\n", num_landmarks_ );
+      fprintf( stdout, "%d\n", num_observations_ );
+
+      num_parameters_ = 6 * num_poses_; // just a localization problem
+
+      for (int i = 0; i < num_observations_; ++i) {
+        fprintf( stdout, "%d, %d, %lf, %lf\n",
+                 pose_index_[i], landmark_index_[i], observations_[i](0), observations_[i](1) );
+    }
+
+      // poses
+      for (int i = 0; i < num_poses_; ++i) {
+        fprintf( stdout, "%lf, %lf, %lf, %lf, %lf, %lf\n",
+                 poses_[i](0), poses_[i](1), poses_[i](2), poses_[i](3), poses_[i](4), poses_[i](5));
+      }
+
+      // landmarks
+      for (int i = 0; i < num_landmarks_; ++i) {
+        fprintf( stdout, "%d, %lf, %lf, %lf\n", i, landmarks_[i](0), landmarks_[i](1), landmarks_[i](2));
+      }
+
     }
 
     bool LoadFile( const char* filename )
@@ -103,6 +134,7 @@ class LocalizationProblem
         landmarks_[i] << x, y, z;
       }
 
+//      PrintData();
       return true;
     }
 
@@ -126,14 +158,18 @@ int main( int argc, char** argv )
 {
   google::InitGoogleLogging(argv[0]);
 
-  if (argc != 2) {
-    std::cerr << "usage: gettruth <measurement_file>\n";
+  if (argc != 3) {
+    std::cerr << "usage: gettruth <measurement_file> <camera file>\n";
     return 1;
   }
 
   // get camera model
   calibu::Rig<double> rig;
-  calibu::LoadRig( "cmod.xml", &rig );
+  calibu::LoadRig( std::string(argv[2]), &rig );
+  if (rig.cameras_.size() == 0) {
+    fprintf(stderr, "No cameras in this rig or no camera file provided\n");
+    exit(0);
+  }
   calibu::CameraInterface<double>* cam = rig.cameras_[0];
 
   LocalizationProblem ctx;
