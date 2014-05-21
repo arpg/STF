@@ -15,6 +15,7 @@
 #include <calibu/cam/rectify_crtp.h>
 
 #include <HAL/Camera/CameraDevice.h>
+#include <HAL/Utils/GetPot>
 
 #include "tags.h"
 
@@ -36,6 +37,11 @@ DEFINE_string(cmod,
 DEFINE_string( map,
     "-map",
     "Survey map file.");
+
+DEFINE_string(o,
+    "-o",
+    "Output file name.");
+
 
 #define USAGE\
       "This program will process images with visible AR tags and produce\n"\
@@ -81,7 +87,7 @@ struct measurement_t
 void ParseCameraUriOrDieComplaining( const std::string& sUri, hal::Camera& cam )
 {
   try{
-    cam = hal::Camera( hal::Uri(sUri) );
+    cam = hal::Camera( hal::Uri(sUri) );    
   }
   catch( hal::DeviceException e ){
     printf("Error parsing camera URI: '%s' -- %s\n", sUri.c_str(), e.what() );
@@ -181,7 +187,13 @@ int main( int argc, char** argv )
 
   // TODO condense this LoadRig into LoadCamera
   calibu::Rig<double> rig;
-  calibu::LoadRig( FLAGS_cmod, &rig );
+  if (FLAGS_cmod.compare(std::string("-cmod")) == 0) {
+    std::string rig_name_( cam.GetDeviceProperty(hal::DeviceDirectory) );
+    rig_name_ += std::string("/cameras.xml");
+    calibu::LoadRig( rig_name_, &rig );
+  } else {
+    calibu::LoadRig( FLAGS_cmod, &rig );
+  }
   calibu::CameraInterface<double> *cmod = rig.cameras_[0];
   Eigen::Matrix3d K;
   double* p = cmod->GetParams(); 
@@ -209,6 +221,16 @@ int main( int argc, char** argv )
   std::vector<measurement_t> measurements;
   std::vector<Eigen::Vector6d> poses;
 
+  FILE* file;
+  bool view_ = true;
+  if (FLAGS_o.compare("-o") == 0) {
+    file = stdout;
+  } else {
+    file = fopen(FLAGS_o.c_str(), "w");
+    view_ = false;
+  }
+
+
   for( int ii = 0; ii<40; ii++ ){
 
     // 1) Capture and rectify
@@ -217,7 +239,7 @@ int main( int argc, char** argv )
       return 0;
     }
     calibu::Rectify( lut, vImages[0].data, rect.data, rect.cols, rect.rows );
-    cvtColor( rect, rgb, CV_GRAY2RGB );
+    cv::cvtColor( rect, rgb, CV_GRAY2RGB );
 
     // 2) Run tag detector and get tag corners
     std::vector<april_tag_detection_t> vDetections;
@@ -225,7 +247,6 @@ int main( int argc, char** argv )
     if( vDetections.empty() ){
       continue;
     }
-
 
     // 3) estimate rough pose from this first seen target
     Eigen::Vector3d pts_3d[4];
@@ -280,29 +301,32 @@ int main( int argc, char** argv )
           cv::Scalar( 255, 0, 255 ), 1, 8 );
     }
 
-    cv::imshow( "Tag Viewer", rgb );
-//    cv::waitKey(0);
+    if (view_) {
+      cv::imshow( "Tag Viewer", rgb );
+      cv::waitKey(0);
+    }
     local_pose_id++;
   }
 
   // ok, now print everything:
-  printf( "%d\n", local_pose_id ); 
-  printf( "%lu\n", local_to_survey.size() ); 
-  printf( "%lu\n", measurements.size() ); 
+  fprintf( file, "%d\n", local_pose_id );
+  fprintf( file, "%lu\n", local_to_survey.size() );
+  fprintf( file, "%lu\n", measurements.size() );
   for( size_t ii = 0; ii < measurements.size(); ii++ ){
     measurement_t& z = measurements[ii];
-    printf("%d, %d, %f, %f\n", z.pose_idx, z.lm_idx, z.u, z.v ); 
+    fprintf(file, "%d, %d, %f, %f\n", z.pose_idx, z.lm_idx, z.u, z.v );
   }
   for( size_t ii = 0; ii < poses.size(); ii++ ){
-    printf( "%f, %f, %f, %f, %f, %f\n", poses[ii][0],  poses[ii][1],
+    fprintf( file,  "%f, %f, %f, %f, %f, %f\n", poses[ii][0],  poses[ii][1],
         poses[ii][2],  poses[ii][3], poses[ii][4],  poses[ii][5] );
   }
   for( size_t ii = 0; ii < local_to_survey.size(); ii++ ){
      int sid = local_to_survey[ii];
      Eigen::Vector3d& p3d = survey_map[sid];
-     printf("%d, %f, %f, %f\n", sid, p3d[0], p3d[1], p3d[2] );
+     fprintf(file, "%d, %f, %f, %f\n", sid, p3d[0], p3d[1], p3d[2] );
   }
-
+  if (view_)
+    fclose(file);
   return 0;
 }
 
