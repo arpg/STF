@@ -44,6 +44,11 @@ DEFINE_string(o,
 
 
 #define USAGE\
+      "\nUsage: findtargets -cam <image source> [-cmod <camera file>]  [-o <output file>]\n"\
+      "\n"\
+      "Example image source: proto:///Users/joe_shmoe/Data/DataLog.log\n"\
+      "Example camera file: cameras.xml\n"\
+      "\n"\
       "This program will process images with visible AR tags and produce\n"\
       "a text file with the following format:\n"\
       "-----------------------------------------------------\n"\
@@ -87,7 +92,7 @@ struct measurement_t
 void ParseCameraUriOrDieComplaining( const std::string& sUri, hal::Camera& cam )
 {
   try{
-    cam = hal::Camera( hal::Uri(sUri) );    
+    cam = hal::Camera( hal::Uri(sUri) );
   }
   catch( hal::DeviceException e ){
     printf("Error parsing camera URI: '%s' -- %s\n", sUri.c_str(), e.what() );
@@ -159,9 +164,9 @@ Eigen::Vector6d CalcPose(
   cv::solvePnP( cv_obj, cv_img, cv_K, cv_coeff, cv_rot, cv_trans, false );
 
   Eigen::Vector6d pose;
-  pose[0] = cv_trans.at<double>(0); 
-  pose[1] = cv_trans.at<double>(1); 
-  pose[2] = cv_trans.at<double>(2); 
+  pose[0] = cv_trans.at<double>(0);
+  pose[1] = cv_trans.at<double>(1);
+  pose[2] = cv_trans.at<double>(2);
   pose[3] = cv_rot.at<double>(0);
   pose[4] = cv_rot.at<double>(1);
   pose[5] = cv_rot.at<double>(2);
@@ -196,7 +201,7 @@ int main( int argc, char** argv )
   }
   calibu::CameraInterface<double> *cmod = rig.cameras_[0];
   Eigen::Matrix3d K;
-  double* p = cmod->GetParams(); 
+  double* p = cmod->GetParams();
   K << p[0], 0, p[2], 0, p[1], p[3], 0, 0, 1;
 
   // TODO add AttachLUT funtionality to camera models?
@@ -217,7 +222,7 @@ int main( int argc, char** argv )
   int local_landmark_id = 0;
   std::map<int,int> local_to_survey; // map from unique id to local 0-based id
   std::map<int,int> survey_to_local; // map from unique id to local 0-based id
-  std::map<int,bool> tag_seen; // tags_seen[id] is true if tag id has been seen 
+  std::map<int,bool> tag_seen; // tags_seen[id] is true if tag id has been seen
   std::vector<measurement_t> measurements;
   std::vector<Eigen::Vector6d> poses;
 
@@ -279,7 +284,7 @@ int main( int argc, char** argv )
         measurements.push_back( z );
       }
 
-      // draw rectangle around tag 
+      // draw rectangle around tag
       cv::line( rgb,
           cv::Point( p->p[0][0], p->p[0][1] ),
           cv::Point( p->p[1][0], p->p[1][1] ),
