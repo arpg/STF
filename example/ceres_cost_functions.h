@@ -14,7 +14,7 @@ struct ProjectionCostFunctor
 
   ProjectionCostFunctor(
       const Vec3t& _pwj, // 3D point j in the world
-      const Vec2t& _zij,  // 2D image measurement of j from camrea i
+      const Vec2t& _zij,  // 2D image measurement of j from camera i
       Scalar* _params
       ) : pwj(_pwj), zij(_zij), params(_params) 
   {
@@ -29,16 +29,35 @@ struct ProjectionCostFunctor
     {
       CHECK_NOTNULL(_t_wi);
       CHECK_NOTNULL(residuals);
-      const Eigen::Map<const Sophus::SE3Group<T> > t_wi(_t_wi);
+
+      const Eigen::Map< const Eigen::Matrix<T,6,1> > temp(_t_wi);
+      const Sophus::SE3Group<T> t_wi = Sophus::SE3Group<T>::exp(temp);
 
       // get point j infront of camera i
-      const Eigen::Matrix<T,3,1> pij = t_wi.inverse() * pwj.template cast<T>();
+      Eigen::Matrix<T,3,1> pij = t_wi.inverse() * pwj.template cast<T>();
       T hij[2];
-      CameraModel::template  Project<T>( pij.data(), (T*)params, hij );
+
+      pij[0] /= pij[2];
+      pij[1] /= pij[2];
+
+      T fac = (T) 1;
+      const T param = (T) params[4];
+      if (param * param > 1e-5) {
+        const T mul2_tanw_by2 = (T)2.0 * tan(param / (T)2.0);
+        T rad = ceres::sqrt(pij[0]*pij[0] + pij[1]*pij[1]);
+        if (rad * rad < 1e-5) {
+          fac = mul2_tanw_by2 / param;
+        }
+        fac = atan(rad * mul2_tanw_by2) / (rad * param);
+      }
+
+      T pix_k[2];
+      pix_k[0] = fac * params[0] * pij[0] + params[2];
+      pix_k[1] = fac * params[1] * pij[1] + params[3];
 
       //      r = zij - hij;
-      residuals[0] = zij(0)-hij[0];
-      residuals[1] = zij(1)-hij[1];
+      residuals[0] = (T)(zij(0) - pix_k[0]);
+      residuals[1] = (T)(zij(1) - pix_k[1]);
       return true;
     }
 

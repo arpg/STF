@@ -18,11 +18,14 @@ find_package( Ceres REQUIRED )
 find_package( gflags REQUIRED )
 find_package( GLog REQUIRED )
 find_package( Sophus REQUIRED )
+find_package( SceneGraph REQUIRED )
 find_package( HAL REQUIRED )
+find_package( Pangolin REQUIRED )
 
 find_package( apriltags REQUIRED )
 
 include_directories(
+    ${SceneGraph_INCLUDE_DIRS}
     ${MINIGLOG_INCLUDE_DIRS}
     ${PbMsgs_INCLUDE_DIRS}
     ${Calibu_INCLUDE_DIRS}
@@ -34,6 +37,7 @@ include_directories(
     ${CERES_INCLUDE_DIRS}
     ${HAL_INCLUDE_DIRS}
     ${apriltags_INCLUDE_DIRS}
+    ${Pangolin_INCLUDE_DIRS}
     )
 
 add_executable( gettruth gettruth.cpp )
@@ -61,3 +65,17 @@ target_link_libraries( findtargets
   ${apriltags_LIBRARIES}
   )
 
+add_executable( visualize visualize.cpp)
+target_link_libraries( visualize
+  ${MINIGLOG_LIBRARIES}
+  ${PbMsgs_LIBRARIES}
+  ${OpenCV2_LIBRARIES}
+  ${CERES_LIBRARIES}
+  ${GFlags_LIBRARIES}
+  ${GLog_LIBRARIES}
+  ${Calibu_LIBRARIES}
+  ${HAL_LIBRARIES}
+  ${apriltags_LIBRARIES}
+  ${Pangolin_LIBRARIES}
+  ${SceneGraph_LIBRARIES}
+  )

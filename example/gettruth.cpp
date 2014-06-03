@@ -19,6 +19,10 @@ DEFINE_string(cmod,
     "-cmod",
     "calibu camera model xml file.");
 
+DEFINE_string(o,
+    "-o",
+    "Output file name.");
+
 namespace Eigen
 {
   typedef Matrix<double,6,1>  Vector6d;
@@ -37,7 +41,7 @@ class LocalizationProblem
       return num_observations_;               
     }
 
-    const Eigen::Vector6d& pose_for_observation( int i ) 
+    const Eigen::Vector6d& pose_for_observation( int i )
     {
       return poses_[pose_index_[i]];
     }
@@ -133,8 +137,7 @@ class LocalizationProblem
         }
         landmarks_[i] << x, y, z;
       }
-
-//      PrintData();
+      PrintData();
       return true;
     }
 
@@ -158,9 +161,16 @@ int main( int argc, char** argv )
 {
   google::InitGoogleLogging(argv[0]);
 
-  if (argc != 3) {
-    std::cerr << "usage: gettruth <measurement_file> <camera file>\n";
+  if ((argc < 3) || (argc > 4)) {
+    std::cerr << "usage: gettruth <measurement_file> <camera file> [<output file>]\n";
     return 1;
+  }
+
+  FILE* file;
+  if (argc == 3) {
+    file = stdout;
+  } else {
+    file = fopen(argv[3], "w");
   }
 
   // get camera model
@@ -188,17 +198,25 @@ int main( int argc, char** argv )
     problem.AddResidualBlock( cost_function, NULL, ctx.pose_data_for_observation(i) );
   }
 
+  fprintf(stdout, "\n\nThe problem has been set up with %d residuals and %d residual blocks\n", problem.NumResiduals(), problem.NumResidualBlocks());
+
   // Make Ceres automatically detect the bundle structure. Note that the
   // standard solver, SPARSE_NORMAL_CHOLESKY, also works fine but it is slower
   // for standard bundle adjustment problems.
   ceres::Solver::Options options;
   options.linear_solver_type = ceres::DENSE_SCHUR;
-  options.minimizer_progress_to_stdout = true;
+  options.minimizer_progress_to_stdout = true;  
 
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
-  std::cout << summary.FullReport() << "\n";
+
+  for (int ii = 0; ii < ctx.num_observations(); ii++) {
+    fprintf(file, "%f, %f, %f, %f, %f, %f\n", ii + 1, ctx.pose_for_observation(ii)(0), ctx.pose_for_observation(ii)(1),
+            ctx.pose_for_observation(ii)(2), ctx.pose_for_observation(ii)(3), ctx.pose_for_observation(ii)(4), ctx.pose_for_observation(ii)(5));
+  }
+  fclose(file);
 
   return 0;
 }
+
 
