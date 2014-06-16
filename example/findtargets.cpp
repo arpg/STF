@@ -269,9 +269,10 @@ void ParseSurveyMapFile(
     int uid; // uniquely encodes tag id and landmark id
     double x, y, z;
     sscanf( line.c_str(), "%d, %lf, %lf, %lf", &uid, &x, &y, &z );
-    x *=  0.0254;
-    y *=  0.0254;
-    z *= -0.0254;
+//    x *=  0.0254;
+//    y *=  0.0254;
+//    z *= -0.0254;
+    z *= -1;
 
     survey_map[uid] = Eigen::Vector3d( x, y, z );
 
@@ -312,10 +313,10 @@ const double w
 //    fprintf(stdout, "(%f, %f) -> <%f, %f, %f>\n", pts_2d[c][0],pts_2d[c][1], pts_3d[c][0], pts_3d[c][1], pts_3d[c][2]);
 //  }
 
-  cv_obj.push_back( cv::Point3f(pts_3d[2][0],pts_3d[2][1],pts_3d[2][2]) );
-  cv_obj.push_back( cv::Point3f(pts_3d[1][0],pts_3d[1][1],pts_3d[1][2]) );
   cv_obj.push_back( cv::Point3f(pts_3d[0][0],pts_3d[0][1],pts_3d[0][2]) );
   cv_obj.push_back( cv::Point3f(pts_3d[3][0],pts_3d[3][1],pts_3d[3][2]) );
+  cv_obj.push_back( cv::Point3f(pts_3d[2][0],pts_3d[2][1],pts_3d[2][2]) );
+  cv_obj.push_back( cv::Point3f(pts_3d[1][0],pts_3d[1][1],pts_3d[1][2]) );
 
   cv_img.push_back( cv::Point2f(pts_2d[0][0],pts_2d[0][1]) );
   cv_img.push_back( cv::Point2f(pts_2d[1][0],pts_2d[1][1]) );
@@ -361,8 +362,7 @@ const double w
           T.at<double>(2, 0), T.at<double>(2, 1), T.at<double>(2, 2), T.at<double>(2, 3),
                            0,                  0,                  0,                  1;
 
-  std::cout<< temp <<std::endl;
-  Eigen::Vector6d pose = _T2Cart( temp.inverse() );
+  Eigen::Vector6d pose = _T2Cart( temp );
 //  pose[0] = cv_trans.at<double>(0);
 //  pose[1] = cv_trans.at<double>(1);
 //  pose[2] = cv_trans.at<double>(2);
@@ -416,6 +416,7 @@ int main( int argc, char** argv )
   // TODO add AttachLUT funtionality to camera models?
   calibu::LookupTable lut;
   calibu::CreateLookupTable( *cmod, lut );
+  fprintf(stdout, "%d, %d ?= %d, %d\n", cmod->Width(), cmod->Height(), cam.Width(), cam.Height());
   assert( cmod->Width() == cam.Width() && cmod->Height() == cam.Height() );
   cv::Mat rect( cam.Height(), cam.Width(), CV_8UC1 ); // rectified image
   cv::Mat rgb;
@@ -445,7 +446,7 @@ int main( int argc, char** argv )
   }
 
 
-  for( int ii = 0; ii < 40; ii++ ){
+  for( int ii = 0; ii < 100; ii++ ){
 
     // 1) Capture and rectify
     if( !cam.Capture( vImages ) ){
@@ -472,11 +473,14 @@ int main( int argc, char** argv )
 //    for(int i = 0; i < 4; i++)
 //    fprintf(stdout, "%f, %f\n", vDetections[0].p[i][0], vDetections[0].p[i][1]);
 
+    int id = vDetections[0].id;
+
     Eigen::Vector6d T_tc = CalcPose( vDetections[0].p, pts_3d, K, p[4] );
 
     Eigen::Vector6d T_wc;
     T_wc = _T2Cart(_Cart2T(tags[vDetections[0].id].pose) * _Cart2T(T_tc) );
-    poses.push_back( T_tc );
+//    if (id == 26)
+      poses.push_back( T_tc );
 
     // 4) Extract measurements of the 4 corners of each detected target
     for( size_t ii = 0; ii < vDetections.size(); ii++ ){
